@@ -1,15 +1,17 @@
- import express from "express";
- import cors from "cors";
+import dotenv from "dotenv";
+dotenv.config();
+import app from "./app.js";
+import {syncDb} from "./src/models/index.js"
 
+const PORT = process.env.PORT || 5000;
 
- const app = express();
+syncDb()
+   .then(()=>{
+      app.listen(PORT, ()=>{
+         console.log(`Server running on port ${PORT}`);
+      });
+   })
 
- const PORT = process.env.PORT || 5000;
-
- app.get("/",(req,res)=>{
-    res.send("hello developer");
- })
-
- app.listen(PORT, ()=>{
-    console.log(`server running on http://localhost:${PORT}`)
- })
+   .catch((err)=>{
+      console.error("DB sync error:", err)
+   })
