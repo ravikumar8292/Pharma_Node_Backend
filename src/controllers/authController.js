@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { ApiError } from "../middlewares/errorHandler.js";
+import { where } from "sequelize";
 
 const register = async (req, res, next) => {
   try {
@@ -82,7 +83,97 @@ const login = async (req, res, next) => {
   }
 };
 
+const UserProfile = async (req, res, next)=>{
+  try {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+      const [firstError] = errors.array();
+           throw new ApiError(firstError.msg || "validation error",400)
+    }
+
+    // const id = req.user.id;
+    // console.log("id here",id)
+
+    const user = await User.findByPk(req.user.id, {
+      attributes : {exclude: ["password"]},
+    })
+
+    if(!user){
+      throw new ApiError("user not found",404)
+    }
+
+    res.status(200).json({
+      success:true,
+      user
+    })
+
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+const UpdateProfile = async (req, res, next)=>{
+  try {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+      const [firstError] = errors.array();
+      throw new ApiError(firstError.msg || "validation error", 400)
+    }
+
+    const id = req.user.id;
+    const {name, email, ph, dob, gender, address} = req.body;
+
+    const updateProfile = await User.update(
+      {name, email, ph, dob, address, gender},
+      {
+        where: {id}
+      }
+    )
+
+    if(!updateProfile) throw new ApiError("User not update profile",404)
+
+    const profile = await User.findByPk(id,{
+      attributes: {exclude: ["password"]},
+    })
+
+    res.status(200).json({
+      success: true,
+      message: "User profile update successfully",
+      profile
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+// const logout =  async (req, res, next)=>{
+//   try {
+//      const errors = validationResult(req);
+//      if(!errors.isEmpty()){
+//       const [firstError] = errors.array();
+//       throw new ApiError(firstError.msg, "validation error", 400);
+//      }
+
+
+//   } catch (error) {
+//     next(error)
+//   }
+// }
+
 export default {
   register,
   login,
+  UserProfile,
+  UpdateProfile,
+  // logout
 };
+
+
+
+// {
+
+//     "email": "tester123@yopmail.com",
+//     "password": "Tester22@123"
+// }
